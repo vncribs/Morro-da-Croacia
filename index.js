@@ -12,14 +12,27 @@ import {
     InteractionType,
     EmbedBuilder
 } from 'discord.js';
-import express from 'express'; // <-- Adicionado para UptimeRobot
+import express from 'express';
 
 // IDs dos canais e cargos
 const CANAL_REGISTRO = '1408285269777580052';
 const CANAL_LOG = '1408424578014904390';
-const CARGO_MEMBRO = '1408281469578641488'; // Cargo definitivo
-const CARGO_ESPERA = '1408437234851647570'; // Cargo temporário "Aguardando Aprovação"
+const CARGO_MEMBRO = '1408281469578641488';
+const CARGO_ESPERA = '1408437234851647570';
 
+// --- CONFIGURAÇÃO DO EXPRESS PARA UPTIME ROBOT ---
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+    res.send('Bot ativo! ✅');
+});
+
+app.listen(PORT, () => {
+    console.log(`Servidor web ativo na porta ${PORT}`);
+});
+
+// --- CONFIGURAÇÃO DO DISCORD ---
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -30,13 +43,15 @@ const client = new Client({
     partials: [Partials.Channel]
 });
 
-// ========================
-// Código atual do bot
-// ========================
+let mensagemBotaoId = null;
 
-client.once('clientReady', async () => {
-    console.log(`Bot do ${client.user.tag} está online!`);
+// Função para capitalizar cada palavra
+function capitalizarNome(nome) {
+    return nome.split(' ').map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()).join(' ');
+}
 
+// Função para enviar o botão de registro
+async function enviarBotaoRegistro() {
     try {
         const canal = await client.channels.fetch(CANAL_REGISTRO);
         if (canal) {
@@ -56,17 +71,31 @@ client.once('clientReady', async () => {
                 .setStyle(ButtonStyle.Success);
 
             const row = new ActionRowBuilder().addComponents(botaoRegistro);
-
-            await canal.send({ embeds: [embedRegistro], components: [row] });
+            const msg = await canal.send({ embeds: [embedRegistro], components: [row] });
+            mensagemBotaoId = msg.id;
         }
     } catch (error) {
         console.error('Erro ao limpar/enviar botão no canal de registro:', error);
+    }
+}
+
+client.once('ready', async () => {
+    console.log(`Bot do ${client.user.tag} está online!`);
+    await enviarBotaoRegistro();
+});
+
+// Reenvia o botão se alguém deletar a mensagem
+client.on('messageDelete', async (mensagem) => {
+    if (mensagem.id === mensagemBotaoId) {
+        console.log('Botão de registro deletado, reenviando...');
+        mensagemBotaoId = null;
+        enviarBotaoRegistro();
     }
 });
 
 client.on('interactionCreate', async interaction => {
     try {
-        // Botão de registro
+        // BOTÃO DE REGISTRO
         if (interaction.isButton() && interaction.customId === 'abrir_registro') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_registro')
@@ -90,25 +119,35 @@ client.on('interactionCreate', async interaction => {
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true);
 
-            const row1 = new ActionRowBuilder().addComponents(inputNome);
-            const row2 = new ActionRowBuilder().addComponents(inputID);
-            const row3 = new ActionRowBuilder().addComponents(inputRecrutador);
+            modal.addComponents(
+                new ActionRowBuilder().addComponents(inputNome),
+                new ActionRowBuilder().addComponents(inputID),
+                new ActionRowBuilder().addComponents(inputRecrutador)
+            );
 
-            modal.addComponents(row1, row2, row3);
             await interaction.showModal(modal);
         }
 
-        // Modal submit
+        // MODAL SUBMIT
         if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'modal_registro') {
-            const nome = interaction.fields.getTextInputValue('nome');
+            let nome = interaction.fields.getTextInputValue('nome');
             const id = interaction.fields.getTextInputValue('id');
             const recrutador = interaction.fields.getTextInputValue('recrutador');
 
-            try { await interaction.member.setNickname(`${id} | ${nome}`); } 
-            catch (err) { console.log('Não foi possível alterar o nickname:', err.message); }
+            // Capitaliza o nome
+            nome = capitalizarNome(nome);
 
-            try { await interaction.member.roles.add(CARGO_ESPERA); } 
-            catch (err) { console.log('Não foi possível atribuir o cargo de espera:', err.message); }
+            try {
+                await interaction.member.setNickname(`${id} | ${nome}`);
+            } catch (err) {
+                console.log('Não foi possível alterar o nickname:', err.message);
+            }
+
+            try {
+                await interaction.member.roles.add(CARGO_ESPERA);
+            } catch (err) {
+                console.log('Não foi possível atribuir o cargo de espera:', err.message);
+            }
 
             try {
                 const canalLog = await client.channels.fetch(CANAL_LOG);
@@ -139,25 +178,27 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ content: 'Registro enviado! Aguarde aprovação da gerência.', ephemeral: true });
         }
 
-        // Botões de aprovação/rejeição
+        // BOTÕES DE APROVAÇÃO/REJEIÇÃO
         if (interaction.isButton() && (interaction.customId.startsWith('aprovar_') || interaction.customId.startsWith('rejeitar_'))) {
             const userId = interaction.customId.split('_')[1];
             const membro = await interaction.guild.members.fetch(userId);
-
             if (!membro) return interaction.reply({ content: 'Usuário não encontrado.', ephemeral: true });
+
+            // Pega o nome capitalizado do nickname
+            const nickname = membro.nickname || membro.user.username;
 
             if (interaction.customId.startsWith('aprovar_')) {
                 try {
                     await membro.roles.remove(CARGO_ESPERA);
                     await membro.roles.add(CARGO_MEMBRO);
-                    await interaction.update({ content: `✅ ${membro.user.tag} aprovado!`, embeds: [], components: [] });
+                    await interaction.update({ content: `✅ ${nickname} aprovado!`, embeds: [], components: [] });
                 } catch (err) {
                     console.log('Erro ao aprovar:', err);
                 }
             } else if (interaction.customId.startsWith('rejeitar_')) {
                 try {
                     await membro.kick('Registro rejeitado pela gerência.');
-                    await interaction.update({ content: `❌ ${membro.user.tag} rejeitado e removido.`, embeds: [], components: [] });
+                    await interaction.update({ content: `❌ ${nickname} rejeitado e removido.`, embeds: [], components: [] });
                 } catch (err) {
                     console.log('Erro ao rejeitar:', err);
                 }
@@ -169,15 +210,4 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// ========================
-// LOGIN
-// ========================
 client.login(process.env.TOKEN);
-
-// ========================
-// UPTIME ROBOT
-// ========================
-const app = express();
-app.get("/", (req, res) => res.send("Bot rodando 24/7!"));
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🌐 Servidor web ativo na porta ${PORT}`));
