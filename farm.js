@@ -133,7 +133,7 @@ module.exports = {
 
                 const embedPasta = new EmbedBuilder()
                     .setColor('#FFA500')
-                    .setTitle(`📁 Pasta de ${interaction.user.username}`)
+                    .setTitle(`📁 Pasta de <@${interaction.user.id}>`)
                     .setDescription('Use os botões abaixo para gerenciar sua pasta ou visualizar as metas.');
 
                 const botoesPasta = new ActionRowBuilder()
