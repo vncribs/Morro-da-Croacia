@@ -13,8 +13,8 @@ const pastasUsuarios = {}; // Guarda ID do canal criado por usuário
 module.exports = {
     enviarPainelFarm: async (client) => {
         try {
-            const canalFarm = await client.channels.fetch('1410019523830222961');
-            const categoriaFarm = '1409980384547967077';
+            const canalFarm = await client.channels.fetch('1408275847718113310');
+            const categoriaFarm = '1408275803015479538';
 
             if (!canalFarm) return console.log('Canal do farm não encontrado!');
 
@@ -45,7 +45,7 @@ module.exports = {
     handleInteraction: async (interaction) => {
         if (!interaction.isButton()) return;
 
-        const categoriaFarm = '1409980384547967077';
+        const categoriaFarm = '1408275803015479538';
 
         function criarEmbedMetas() {
             let metas = {};
