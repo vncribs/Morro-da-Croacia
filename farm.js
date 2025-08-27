@@ -114,7 +114,7 @@ module.exports = {
                 // Cria nova pasta
                 const guild = interaction.guild;
                 const pasta = await guild.channels.create({
-                    name: `farm-${interaction.user.username}`,
+                    name: `farm-${interaction.member.displayName}`,
                     type: 0,
                     parent: categoriaFarm,
                     permissionOverwrites: [
@@ -133,7 +133,7 @@ module.exports = {
 
                 const embedPasta = new EmbedBuilder()
                     .setColor('#FFA500')
-                    .setTitle(`📁 Pasta de <@${interaction.user.id}>`)
+                    .setTitle(`📁 Pasta de ${interaction.member.displayName}`)
                     .setDescription('Use os botões abaixo para gerenciar sua pasta ou visualizar as metas.');
 
                 const botoesPasta = new ActionRowBuilder()
