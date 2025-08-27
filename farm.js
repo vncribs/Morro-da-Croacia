@@ -45,7 +45,7 @@ module.exports = {
     handleInteraction: async (interaction) => {
         if (!interaction.isButton()) return;
 
-        const categoriaFarm = '1409980384547967077';
+        const categoriaFarm = '1408275803015479538';
 
         function criarEmbedMetas() {
             let metas = {};
