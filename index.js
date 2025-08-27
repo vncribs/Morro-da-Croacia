@@ -4,10 +4,10 @@
         const TOKEN = process.env.TOKEN;
 
         // IDs fornecidos
-        const CHANNEL_REGISTRO = "1409980265995960330";
-        const CHANNEL_LOGS = "1409979944036991158";
-        const CARGO_MEMBRO = "1409989088421085214";
-        const CARGO_AGUARDANDO = "1409991552465506446";
+        const CHANNEL_REGISTRO = "1408285269777580052";
+        const CHANNEL_LOGS = "1408424578014904390";
+        const CARGO_MEMBRO = "1408281469578641488";
+        const CARGO_AGUARDANDO = "1408437234851647570";
 
         // Config.js
         const { enviarBotaoDefinirMetas, setupConfig, carregarMetas } = require('./config.js');
