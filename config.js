@@ -1,7 +1,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 
-const CHANNEL_CONFIG = "1409980067815100567";
+const CHANNEL_CONFIG = "1408614791878283345";
 const metasPath = './metas.json';
 
 // Emojis dos itens
