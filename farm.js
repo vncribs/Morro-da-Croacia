@@ -152,29 +152,24 @@ module.exports = {
 
                 // Edita botão no painel para indicar pasta criada
                 const msg = await interaction.message.fetch();
-                const componentes = msg.components.map(row => {
-                    row.components = row.components.map(btn => {
-                        if (btn.data.custom_id === 'farm_abrir_pasta') {
-                            btn.data.label = 'Pasta criada ✅';
-                        }
-                        return btn;
-                    });
-                    return row;
+                const componentesReais = msg.components.map(row => {
+                    return new ActionRowBuilder().addComponents(
+                        row.components.map(btn => 
+                            new ButtonBuilder()
+                                .setCustomId(btn.customId || btn.data.custom_id)
+                                .setLabel(
+                                    btn.data.custom_id === 'farm_abrir_pasta' ? 'Pasta criada ✅' : (btn.label || btn.data.label)
+                                )
+                                .setStyle(btn.style || btn.data.style)
+                                .setDisabled(btn.data.custom_id === 'farm_abrir_pasta') // desativa o botão
+                        )
+                    );
                 });
+                
+                await msg.edit({ components: componentesReais });
+                
+                await interaction.editReply({ content: `✅ Sua pasta foi criada: ${pasta}` });
 
-                await msg.edit({ components });
-
-                await interaction.editReply({ content: `Sua pasta foi criada: ${pasta}` });
-
-            } catch (err) {
-                console.error('Erro ao abrir pasta:', err);
-                try {
-                    if (!interaction.replied && !interaction.deferred)
-                        await interaction.reply({ content: '❌ Erro ao criar a pasta.', flags: 64 });
-                } catch {}
-            }
-            return;
-        }
 
         // VISUALIZAR METAS NA PASTA
         if (interaction.customId === 'farm_visualizar_metas_pasta') {
